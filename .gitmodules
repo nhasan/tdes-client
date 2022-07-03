@@ -1,0 +1,3 @@
+[submodule "jms-client"]
+	path = jms-client
+	url = https://github.com/faa-swim/jms-client

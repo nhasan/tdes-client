@@ -1,0 +1,14 @@
+/target/
+.vscode/
+.settings/
+./logs
+.classpath
+.project
+*.gz
+*.db
+*.lock
+*.project
+*.factorypath
+*.log
+.idea
+
