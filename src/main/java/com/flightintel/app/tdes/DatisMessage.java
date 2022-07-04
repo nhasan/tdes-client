@@ -10,9 +10,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 public class DatisMessage {
@@ -22,6 +21,7 @@ public class DatisMessage {
     private final Timestamp issuedTimestamp;
     private final String atisType;
     private final String atisCode;
+    private final String atisHeader;
     private final String atisBody;
 
     public DatisMessage(final String xmlMessage) throws DAtisMessageParseException {
@@ -29,21 +29,34 @@ public class DatisMessage {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
 
-            DateFormat timestampFormater = new SimpleDateFormat("ddHHmm");
-            timestampFormater.setTimeZone(TimeZone.getTimeZone("UTC"));
-
             Document doc = builder.parse(stream);
             Element datisData = doc.getDocumentElement();
             icaoLocation = datisData.getElementsByTagName("airportID").item(0).getTextContent();
-            String s = datisData.getElementsByTagName("DATISTime").item(0).getTextContent();
-            issuedTimestamp = new Timestamp(Instant.now().toEpochMilli());
-            //new Timestamp(timestampFormater.parse(s).getTime());
+            issuedTimestamp = parseAtisTime(datisData.getElementsByTagName("time").item(0).getTextContent());
             atisType = datisData.getElementsByTagName("editType").item(0).getTextContent();
             atisCode = datisData.getElementsByTagName("atisCode").item(0).getTextContent();
+            atisHeader = datisData.getElementsByTagName("dataHeader").item(0).getTextContent();
             atisBody = datisData.getElementsByTagName("dataBody").item(0).getTextContent();
         } catch (Exception e) {
             throw new DAtisMessageParseException("Failed to create DAtis message due to: " + e.getMessage(), e);
         }
+    }
+
+    private Timestamp parseAtisTime(String value)
+    {
+        int hour = Integer.parseInt(value.substring(0, 2));
+        int minute = Integer.parseInt(value.substring(2));
+        Calendar calendar = GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"));
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        int time1 = Integer.parseInt(value);
+        int time2 = calendar.get(Calendar.HOUR_OF_DAY)*100 + calendar.get(Calendar.MINUTE);
+        if (time1 > time2) {
+            calendar.add(Calendar.DAY_OF_MONTH, -1);
+        }
+        return new Timestamp(calendar.getTimeInMillis());
     }
 
     public String getIcaoLocation() {
@@ -60,6 +73,10 @@ public class DatisMessage {
 
     public String getAtisCode() {
         return atisCode;
+    }
+
+    public String getAtisHeader() {
+        return atisHeader;
     }
 
     public String getAtisBody() {
