@@ -1,6 +1,6 @@
 package com.flightintel.app.tdes.datisdb;
 
-import com.flightintel.app.tdes.DAtisMessage;
+import com.flightintel.app.tdes.DatisMessage;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.dbutils.DbUtils;
 import org.slf4j.Logger;
@@ -77,7 +77,7 @@ public class DatisDb {
         }
     }
 
-    public void putDatis(final DAtisMessage datisMessage) throws SQLException {
+    public void putDatis(final DatisMessage datisMessage) throws SQLException {
         Connection conn = null;
         try {
             conn = getDBConnection();
@@ -94,6 +94,27 @@ public class DatisDb {
 
             putDatisPreparedStatement.executeUpdate();
         } finally {
+            DbUtils.closeQuietly(conn);
+        }
+    }
+
+    public int removeOldDatis(final DatisMessage datisMessage) throws SQLException {
+        Connection conn = getDBConnection();
+        PreparedStatement removeDatisPreparedStatement = null;
+        try {
+            if (datisMessage.getAtisType().equals("C")) {
+                removeDatisPreparedStatement = conn.prepareStatement(
+                        "DELETE FROM datis WHERE icaoLocation=? and atisType <> 'C'");
+            } else {
+                removeDatisPreparedStatement = conn.prepareStatement(
+                        "DELETE FROM datis WHERE icaoLocation=? and atisType = 'C'");
+            }
+
+            removeDatisPreparedStatement.setString(1, datisMessage.getIcaoLocation());
+
+            return removeDatisPreparedStatement.executeUpdate();
+        } finally {
+            DbUtils.closeQuietly(removeDatisPreparedStatement);
             DbUtils.closeQuietly(conn);
         }
     }
