@@ -68,8 +68,8 @@ public class DatisDb {
         try {
             logger.info("Creating datis table");
             String createQuery = "CREATE TABLE " + this.config.table + " ( "
-                    + "icaoLocation varchar(12), issuedTimeStamp timestamp, atisType varchar(1), "
-                    + "atisCode varchar(1), atisBody varchar(2048), "
+                    + "icaoLocation varchar(12), issuedTimeStamp timestamptz, atisType varchar(1), "
+                    + "atisCode varchar(1), atisHeader varchar(64), atisBody varchar(2048), "
                     + "primary key (icaoLocation, atisType))";
             conn.prepareStatement(createQuery).execute();
         } finally {
@@ -81,16 +81,17 @@ public class DatisDb {
         Connection conn = null;
         try {
             conn = getDBConnection();
-            String putDatisSql = "INSERT INTO " + this.config.table + " VALUES (?, ?, ?, ?, ?) "
+            String putDatisSql = "INSERT INTO " + this.config.table + " VALUES (?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT (icaoLocation, atisType) DO UPDATE SET issuedTimeStamp=EXCLUDED.issuedTimeStamp, "
-                    + "atisCode=EXCLUDED.atisCode, atisBody=EXCLUDED.atisBody";
+                    + "atisCode=EXCLUDED.atisCode, atisHeader=EXCLUDED.atisHeader, atisBody=EXCLUDED.atisBody";
 
             PreparedStatement putDatisPreparedStatement = conn.prepareStatement(putDatisSql);
             putDatisPreparedStatement.setString(1, datisMessage.getIcaoLocation());
             putDatisPreparedStatement.setTimestamp(2, datisMessage.getIssuedTimestamp());
             putDatisPreparedStatement.setString(3, datisMessage.getAtisType());
             putDatisPreparedStatement.setString(4, datisMessage.getAtisCode());
-            putDatisPreparedStatement.setString(5, datisMessage.getAtisBody());
+            putDatisPreparedStatement.setString(5, datisMessage.getAtisHeader());
+            putDatisPreparedStatement.setString(6, datisMessage.getAtisBody());
 
             putDatisPreparedStatement.executeUpdate();
         } finally {
@@ -98,7 +99,7 @@ public class DatisDb {
         }
     }
 
-    public int removeOldDatis(final DatisMessage datisMessage) throws SQLException {
+    public void removeOldDatis(final DatisMessage datisMessage) throws SQLException {
         Connection conn = getDBConnection();
         PreparedStatement removeDatisPreparedStatement = null;
         try {
@@ -112,7 +113,7 @@ public class DatisDb {
 
             removeDatisPreparedStatement.setString(1, datisMessage.getIcaoLocation());
 
-            return removeDatisPreparedStatement.executeUpdate();
+            removeDatisPreparedStatement.executeUpdate();
         } finally {
             DbUtils.closeQuietly(removeDatisPreparedStatement);
             DbUtils.closeQuietly(conn);
