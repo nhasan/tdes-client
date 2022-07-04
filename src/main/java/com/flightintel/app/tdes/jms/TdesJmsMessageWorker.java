@@ -1,6 +1,6 @@
 package com.flightintel.app.tdes.jms;
 
-import com.flightintel.app.tdes.DAtisMessage;
+import com.flightintel.app.tdes.DatisMessage;
 import com.flightintel.app.tdes.datisdb.DatisDb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +20,11 @@ public class TdesJmsMessageWorker implements MessageListener {
     @Override
     public void onMessage(Message jmsMessage) {
         try {
-            DAtisMessage datisMessage = parseTdesJmsMessage(jmsMessage);
+            DatisMessage datisMessage = parseTdesJmsMessage(jmsMessage);
             logger.debug("Received: "+datisMessage.getIcaoLocation()+" "+datisMessage.getAtisType()
                     +" "+datisMessage.getAtisCode() );
             try {
+                datisDb.removeOldDatis(datisMessage);
                 datisDb.putDatis(datisMessage);
             }
             catch (SQLException e) {
@@ -34,7 +35,7 @@ public class TdesJmsMessageWorker implements MessageListener {
         }
     }
 
-    private DAtisMessage parseTdesJmsMessage(Message message) throws Exception {
+    private DatisMessage parseTdesJmsMessage(Message message) throws Exception {
         String messageBody = "";
         if (message instanceof BytesMessage) {
             BytesMessage byteMessage = (BytesMessage) message;
@@ -45,6 +46,6 @@ public class TdesJmsMessageWorker implements MessageListener {
             messageBody = ((TextMessage) message).getText();
         }
 
-        return new DAtisMessage(messageBody);
+        return new DatisMessage(messageBody);
     }
 }
