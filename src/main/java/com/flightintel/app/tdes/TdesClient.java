@@ -14,17 +14,20 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TdesClient implements ExceptionListener {
     private static final Logger logger = LoggerFactory.getLogger(TdesClient.class);
+    private final static CountDownLatch latch = new CountDownLatch(1);
 
     private final TdesClientConfig config;
     private final JmsClient jmsClient;
     private final TdesJmsMessageWorker tdesJmsMessageWorker;
 
     private final DatisDb datisDb;
-    private final static CountDownLatch latch = new CountDownLatch(1);
 
     public TdesClient(TdesClientConfig config) throws Exception {
         this.config = config;
@@ -73,7 +76,12 @@ public class TdesClient implements ExceptionListener {
     }
 
     public void stop() {
-
+        logger.info("Destroying JmsClient");
+        try {
+            jmsClient.close();
+        } catch (final Exception e) {
+            logger.error("Unable to destroy JmsClient due to: " + e.getMessage(), e);
+        }
     }
 
     @Override
