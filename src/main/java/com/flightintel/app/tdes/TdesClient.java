@@ -14,10 +14,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class TdesClient implements ExceptionListener {
     private static final Logger logger = LoggerFactory.getLogger(TdesClient.class);
@@ -41,19 +38,18 @@ public class TdesClient implements ExceptionListener {
     private void connectJmsClient() {
 
         logger.info("Starting JMS Consumer");
-        boolean jmsConsumerStarted = false;
 
-        while (!jmsConsumerStarted) {
+        while (true) {
             try {
                 jmsClient.connect(config.getJmsConnectionFactoryName(), this);
                 jmsClient.createConsumer(config.getJmsDestination()).setMessageListener(tdesJmsMessageWorker);
-                jmsConsumerStarted = true;
+                break;
             } catch (final Exception e) {
                 logger.error("JmsClient failed to start due to: " + e.getMessage(), e);
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e1) {
-                    logger.warn("Thread interupded");
+                    logger.warn("Thread interrupted");
                 }
             }
         }
@@ -62,12 +58,7 @@ public class TdesClient implements ExceptionListener {
 
     public void start() throws SQLException {
         logger.info("Starting TdesClient");
-        if (!datisDb.datisTableExists()) {
-            datisDb.createDatisTable();
-        }
-
-        boolean datisTableExists = datisDb.datisTableExists();
-        if (datisTableExists) {
+        if (datisDb.datisTableExists()) {
             datisDb.dropDatisTable();
         }
         datisDb.createDatisTable();
@@ -76,9 +67,11 @@ public class TdesClient implements ExceptionListener {
     }
 
     public void stop() {
-        logger.info("Destroying JmsClient");
         try {
+            logger.info("Destroying JmsClient");
             jmsClient.close();
+            logger.info("Closing database connections");
+            datisDb.close();
         } catch (final Exception e) {
             logger.error("Unable to destroy JmsClient due to: " + e.getMessage(), e);
         }
@@ -86,7 +79,7 @@ public class TdesClient implements ExceptionListener {
 
     @Override
     public void onException(JMSException e) {
-        logger.error("JmsClient Failure due to : " + e.getMessage() + ". Resarting JmsClient", e);
+        logger.error("JmsClient Failure due to : " + e.getMessage() + ". Restarting JmsClient", e);
         try {
             jmsClient.reInitialize();
         } catch (final Exception e1) {
@@ -114,7 +107,7 @@ public class TdesClient implements ExceptionListener {
     }
 
     public static void main(final String[] args) throws Exception {
-        logger.info("Loading TdesClient Config and Initalizing");
+        logger.info("Loading TdesClient Config and Initializing");
 
         Config typeSafeConfig;
         // load FnsClient Config

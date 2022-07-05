@@ -24,7 +24,7 @@ public class DatisDb {
                     + " currently not supported. Only postgresql is supported.");
         }
 
-        logger.info(config.getConnectionUrl());
+        logger.info("Initializing database connection pool");
         notamDbDataSource.setDriverClassName(config.getDriver());
         notamDbDataSource.setUrl(config.getConnectionUrl());
         notamDbDataSource.setUsername(config.getUsername());
@@ -32,6 +32,7 @@ public class DatisDb {
         notamDbDataSource.setMinIdle(0);
         notamDbDataSource.setMaxIdle(10);
         notamDbDataSource.setMaxOpenPreparedStatements(100);
+        notamDbDataSource.start();
     }
 
     public boolean datisTableExists() throws SQLException {
@@ -122,5 +123,9 @@ public class DatisDb {
 
     public Connection getDBConnection() throws SQLException {
         return notamDbDataSource.getConnection();
+    }
+
+    public void close() throws SQLException {
+        notamDbDataSource.close();
     }
 }

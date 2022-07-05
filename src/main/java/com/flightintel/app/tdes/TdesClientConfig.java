@@ -10,9 +10,6 @@ public class TdesClientConfig {
 
     protected String jmsConnectionFactoryName = "";
     protected String jmsDestination = "";
-    protected int jmsProcessingThreads = 2;
-
-    protected int datisDbInitializationRetryCount = 3;
 
     public TdesClientConfig(Config typeSafeConfig) {
         this.jmsClientConfig.setInitialContextFactory(typeSafeConfig.getString("jms.initialContextFactory"));
@@ -39,10 +36,6 @@ public class TdesClientConfig {
 
     public String getJmsDestination() {
         return this.jmsDestination;
-    }
-
-    public int getJmsProcessingThreads() {
-        return this.jmsProcessingThreads;
     }
 
 }
