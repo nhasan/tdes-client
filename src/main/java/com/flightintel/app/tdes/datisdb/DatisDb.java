@@ -68,7 +68,7 @@ public class DatisDb {
             String createQuery = "CREATE TABLE " + this.config.table + " ( "
                     + "icaoLocation varchar(12), issuedTimeStamp timestamptz, atisType varchar(1), "
                     + "atisCode varchar(1), atisHeader varchar(64), atisBody varchar(2048), "
-                    + "storedTimeStamp timestamptz, primary key (icaoLocation, atisType))";
+                    + "storedTimeStamp timestamptz, xmlMessage xml, primary key (icaoLocation, atisType))";
             conn.prepareStatement(createQuery).execute();
         } finally {
             DbUtils.closeQuietly(conn);
@@ -79,10 +79,10 @@ public class DatisDb {
         Connection conn = null;
         try {
             conn = getDBConnection();
-            String putDatisSql = "INSERT INTO " + this.config.table + " VALUES (?, ?, ?, ?, ?, ?, ?) "
+            String putDatisSql = "INSERT INTO " + this.config.table + " VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT (icaoLocation, atisType) DO UPDATE SET issuedTimeStamp=EXCLUDED.issuedTimeStamp, "
                     + "atisCode=EXCLUDED.atisCode, atisHeader=EXCLUDED.atisHeader, atisBody=EXCLUDED.atisBody, "
-                    + "storedTimeStamp=NOW()";
+                    + "storedTimeStamp=NOW(), xmlMessage=EXCLUDED.xmlMessage";
 
             PreparedStatement putDatisPreparedStatement = conn.prepareStatement(putDatisSql);
             putDatisPreparedStatement.setString(1, datisMessage.getIcaoLocation());
@@ -92,6 +92,10 @@ public class DatisDb {
             putDatisPreparedStatement.setString(5, datisMessage.getAtisHeader());
             putDatisPreparedStatement.setString(6, datisMessage.getAtisBody());
             putDatisPreparedStatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+
+            SQLXML sqlXml = putDatisPreparedStatement.getConnection().createSQLXML();
+            sqlXml.setString(datisMessage.getXmlMessage());
+            putDatisPreparedStatement.setSQLXML(8, sqlXml);
 
             putDatisPreparedStatement.executeUpdate();
         } finally {

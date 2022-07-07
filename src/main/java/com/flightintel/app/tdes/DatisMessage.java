@@ -23,6 +23,7 @@ public class DatisMessage {
     private final String atisCode;
     private final String atisHeader;
     private final String atisBody;
+    private final String xmlMessage;
 
     public DatisMessage(final String xmlMessage) throws DAtisMessageParseException {
         try (ByteArrayInputStream stream = new ByteArrayInputStream(xmlMessage.getBytes(StandardCharsets.UTF_8))) {
@@ -31,12 +32,13 @@ public class DatisMessage {
 
             Document doc = builder.parse(stream);
             Element datisData = doc.getDocumentElement();
-            icaoLocation = datisData.getElementsByTagName("airportID").item(0).getTextContent();
-            issuedTimestamp = parseAtisTime(datisData.getElementsByTagName("time").item(0).getTextContent());
-            atisType = datisData.getElementsByTagName("editType").item(0).getTextContent();
-            atisCode = datisData.getElementsByTagName("atisCode").item(0).getTextContent();
-            atisHeader = datisData.getElementsByTagName("dataHeader").item(0).getTextContent();
-            atisBody = datisData.getElementsByTagName("dataBody").item(0).getTextContent();
+            this.icaoLocation = datisData.getElementsByTagName("airportID").item(0).getTextContent();
+            this.issuedTimestamp = parseAtisTime(datisData.getElementsByTagName("time").item(0).getTextContent());
+            this.atisType = datisData.getElementsByTagName("editType").item(0).getTextContent();
+            this.atisCode = datisData.getElementsByTagName("atisCode").item(0).getTextContent();
+            this.atisHeader = datisData.getElementsByTagName("dataHeader").item(0).getTextContent();
+            this.atisBody = datisData.getElementsByTagName("dataBody").item(0).getTextContent();
+            this.xmlMessage = xmlMessage;
         } catch (Exception e) {
             throw new DAtisMessageParseException("Failed to create DAtis message due to: " + e.getMessage(), e);
         }
@@ -81,6 +83,10 @@ public class DatisMessage {
 
     public String getAtisBody() {
         return atisBody;
+    }
+
+    public String getXmlMessage() {
+        return xmlMessage;
     }
 
     public static class DAtisMessageParseException extends Exception
