@@ -6,10 +6,7 @@ import org.apache.commons.dbutils.DbUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class DatisDb {
     private final static Logger logger = LoggerFactory.getLogger(DatisDb.class);
@@ -71,7 +68,7 @@ public class DatisDb {
             String createQuery = "CREATE TABLE " + this.config.table + " ( "
                     + "icaoLocation varchar(12), issuedTimeStamp timestamptz, atisType varchar(1), "
                     + "atisCode varchar(1), atisHeader varchar(64), atisBody varchar(2048), "
-                    + "primary key (icaoLocation, atisType))";
+                    + "storedTimeStamp timestamptz, primary key (icaoLocation, atisType))";
             conn.prepareStatement(createQuery).execute();
         } finally {
             DbUtils.closeQuietly(conn);
@@ -82,9 +79,10 @@ public class DatisDb {
         Connection conn = null;
         try {
             conn = getDBConnection();
-            String putDatisSql = "INSERT INTO " + this.config.table + " VALUES (?, ?, ?, ?, ?, ?) "
+            String putDatisSql = "INSERT INTO " + this.config.table + " VALUES (?, ?, ?, ?, ?, ?, ?) "
                     + "ON CONFLICT (icaoLocation, atisType) DO UPDATE SET issuedTimeStamp=EXCLUDED.issuedTimeStamp, "
-                    + "atisCode=EXCLUDED.atisCode, atisHeader=EXCLUDED.atisHeader, atisBody=EXCLUDED.atisBody";
+                    + "atisCode=EXCLUDED.atisCode, atisHeader=EXCLUDED.atisHeader, atisBody=EXCLUDED.atisBody, "
+                    + "storedTimeStamp=NOW()";
 
             PreparedStatement putDatisPreparedStatement = conn.prepareStatement(putDatisSql);
             putDatisPreparedStatement.setString(1, datisMessage.getIcaoLocation());
@@ -93,6 +91,7 @@ public class DatisDb {
             putDatisPreparedStatement.setString(4, datisMessage.getAtisCode());
             putDatisPreparedStatement.setString(5, datisMessage.getAtisHeader());
             putDatisPreparedStatement.setString(6, datisMessage.getAtisBody());
+            putDatisPreparedStatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
 
             putDatisPreparedStatement.executeUpdate();
         } finally {
