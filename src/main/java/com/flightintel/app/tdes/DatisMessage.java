@@ -54,7 +54,8 @@ public class DatisMessage {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         int time1 = Integer.parseInt(value);
-        int time2 = calendar.get(Calendar.HOUR_OF_DAY)*100 + calendar.get(Calendar.MINUTE);
+        Calendar now = GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"));
+        int time2 = now.get(Calendar.HOUR_OF_DAY)*100 + now.get(Calendar.MINUTE);
         if (time1 > time2) {
             calendar.add(Calendar.DAY_OF_MONTH, -1);
         }
