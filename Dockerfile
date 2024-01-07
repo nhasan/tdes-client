@@ -4,7 +4,11 @@ RUN mvn clean install -f ./jms-client/pom.xml \
         && mvn clean package
 
 FROM azul/zulu-openjdk-alpine:11
+
+USER nobody
+
 WORKDIR /app
-COPY --from=MAVEN_BUILD target/tdes-client ./
+
+COPY --chown=nobody:nobody --from=MAVEN_BUILD target/tdes-client ./
 
 ENTRYPOINT ["java", "-jar", "TdesClient.jar"]
